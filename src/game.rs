@@ -7,12 +7,14 @@ use std::io::{self, Write};
 pub struct Game {
     deck: Vec<Card>,
     player: Player,
-    discard: Vec<Card>,
     can_skip: bool,
     previous_card: Option<Card>,
 }
 
 impl Game {
+    pub fn get_deck_count(&self) -> usize {
+        self.deck.len()
+    }
     pub fn new() -> Self {
         let mut deck = create_deck();
         deck.shuffle();
@@ -20,7 +22,6 @@ impl Game {
         Game {
             deck,
             player: Player::new(),
-            discard: Vec::new(),
             can_skip: true,
             previous_card: None,
         }
@@ -29,15 +30,22 @@ impl Game {
     fn create_room(&mut self) -> Option<Room> {
         let mut room_cards = Vec::with_capacity(4);
 
+        // First add the previous card if it exists
         if let Some(card) = self.previous_card.take() {
             room_cards.push(card);
         }
 
+        // Draw remaining cards to fill the room
         while room_cards.len() < 4 {
             if let Some(card) = self.deck.pop() {
                 room_cards.push(card);
-            } else {
+            } else if room_cards.is_empty() {
+                // If we have no cards at all, return None
                 return None;
+            } else {
+                // If we have some cards but can't fill the room,
+                // return what we have (end game scenario)
+                return Some(Room::new(room_cards));
             }
         }
 
@@ -48,6 +56,7 @@ impl Game {
         'game: loop {
             match self.create_room() {
                 Some(mut room) => 'room: loop {
+                    println!("\nCards remaining in dungeon: {}", self.get_deck_count());
                     room.display();
                     self.player.display_status();
                     println!("\nOptions:");
@@ -89,8 +98,11 @@ impl Game {
                                 }
                             }
 
+                            // Find the unselected card for the next room
+                            self.previous_card =
+                                room.cards.iter().find(|card| !card.selected).cloned();
+
                             self.can_skip = true;
-                            self.previous_card = Some(room.cards[3].clone());
                             break 'room;
                         }
                         _ => println!("Invalid choice!"),
