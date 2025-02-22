@@ -9,10 +9,10 @@ use game::Game;
 use utils::get_user_input;
 
 fn display_rules() {
-    println!("\n=== SCOUNDREL - Game Rules ===");
+    println!("\n=== SCOUNDREL - Game Rules at a glance ===");
     println!("\nIf you'd like to see the original rules look at the README.md file");
     println!("\nSetup:");
-    println!("• Started with 20 Health");
+    println!("• Player starts with 20 Health");
     println!("• Uses standard deck minus Red Face Cards and Red Aces");
 
     println!("\nCard Types:");

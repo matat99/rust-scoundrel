@@ -1,5 +1,5 @@
 // src/player.rs
-use crate::cards::{Card, CardType};
+use crate::cards::{Card, CardState};
 use crate::utils::get_user_input;
 
 pub const STARTING_HEALTH: u8 = 20;
@@ -50,7 +50,7 @@ impl Player {
         }
     }
 
-    pub fn fight_monster(&mut self, monster: &Card) {
+    pub fn fight_monster(&mut self, monster: &mut Card) {
         println!("\nFighting {}!", monster);
         if self.equipped_weapon.is_some() && self.can_use_weapon_against(monster.value) {
             println!("Options:");
@@ -68,10 +68,11 @@ impl Player {
         }
     }
 
-    fn fight_barehanded(&mut self, monster: &Card) {
+    fn fight_barehanded(&mut self, monster: &mut Card) {
         println!("Fighting {} barehanded!", monster);
         if self.health >= monster.value {
             self.health -= monster.value;
+            monster.state = CardState::Defeated;
             println!(
                 "Took {} damage. Health remaining: {}",
                 monster.value, self.health
@@ -82,7 +83,7 @@ impl Player {
         }
     }
 
-    fn fight_with_weapon(&mut self, monster: &Card) {
+    fn fight_with_weapon(&mut self, monster: &mut Card) {
         if let Some(weapon) = &self.equipped_weapon {
             println!("Fighting {} with weapon {}", monster, weapon);
             let damage = if monster.value > weapon.value {
@@ -93,6 +94,7 @@ impl Player {
 
             if self.health >= damage {
                 self.health -= damage;
+                monster.state = CardState::Defeated;
                 println!("Took {} damage. Health remaining: {}", damage, self.health);
                 self.monsters_slain.push(monster.clone());
             } else {

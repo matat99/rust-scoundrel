@@ -1,13 +1,26 @@
-// src/card.rs
+// src/cards.rs
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MonsterSuit {
+    Spade,
+    Club,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CardState {
+    Active,
+    Defeated,
+    Used,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CardType {
-    Monster,
-    Weapon,
-    Potion,
+    Monster(MonsterSuit), // Can only be Spade or Club
+    Weapon,               // Always Diamond
+    Potion,               // Always Heart
 }
 
 #[derive(Debug, Clone)]
@@ -15,6 +28,7 @@ pub struct Card {
     pub card_type: CardType,
     pub value: u8,
     pub selected: bool,
+    pub state: CardState,
 }
 
 pub trait Shuffleable {
@@ -31,15 +45,24 @@ impl Shuffleable for Vec<Card> {
 pub fn create_deck() -> Vec<Card> {
     let mut deck = Vec::with_capacity(44);
 
-    // Add Monsters (Clubs and Spades)
+    // Add Spades
     for value in 2..=14 {
-        for _ in 0..2 {
-            deck.push(Card {
-                card_type: CardType::Monster,
-                value,
-                selected: false,
-            });
-        }
+        deck.push(Card {
+            card_type: CardType::Monster(MonsterSuit::Spade),
+            value,
+            selected: false,
+            state: CardState::Active,
+        });
+    }
+
+    // Add Clubs
+    for value in 2..=14 {
+        deck.push(Card {
+            card_type: CardType::Monster(MonsterSuit::Club),
+            value,
+            selected: false,
+            state: CardState::Active,
+        });
     }
 
     // Add Potions (Hearts)
@@ -48,6 +71,7 @@ pub fn create_deck() -> Vec<Card> {
             card_type: CardType::Potion,
             value,
             selected: false,
+            state: CardState::Active,
         });
     }
 
@@ -57,6 +81,7 @@ pub fn create_deck() -> Vec<Card> {
             card_type: CardType::Weapon,
             value,
             selected: false,
+            state: CardState::Active,
         });
     }
 
@@ -66,7 +91,6 @@ pub fn create_deck() -> Vec<Card> {
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let value_str = match self.value {
-            1 => "A".to_string(),
             11 => "J".to_string(),
             12 => "Q".to_string(),
             13 => "K".to_string(),
@@ -75,7 +99,8 @@ impl fmt::Display for Card {
         };
 
         match self.card_type {
-            CardType::Monster => write!(f, "{}♠/♣", value_str),
+            CardType::Monster(MonsterSuit::Spade) => write!(f, "{}♠", value_str),
+            CardType::Monster(MonsterSuit::Club) => write!(f, "{}♣", value_str),
             CardType::Weapon => write!(f, "{}♦", value_str),
             CardType::Potion => write!(f, "{}♥", value_str),
         }

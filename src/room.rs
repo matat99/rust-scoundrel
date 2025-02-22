@@ -1,5 +1,5 @@
 // src/room.rs
-use crate::cards::{Card, CardType};
+use crate::cards::{Card, CardState, CardType};
 use crate::player::{Player, STARTING_HEALTH};
 
 #[derive(Debug)]
@@ -19,17 +19,22 @@ impl Room {
     pub fn display(&self) {
         println!("\n=== Current Room ===");
         println!("Cards remaining to select: {}", 3 - self.selected_count);
-        for (i, card) in self.cards.iter().enumerate() {
-            let status = if card.selected {
-                "[Selected]"
-            } else if card.card_type == CardType::Monster {
-                "[Must Fight]"
-            } else {
-                "[Available]"
-            };
-            println!("{}. {} {}", i, card, status);
+        print!("Cards: ");
+
+        let active_cards: Vec<_> = self
+            .cards
+            .iter()
+            .enumerate()
+            .filter(|(_, card)| card.state == CardState::Active)
+            .collect();
+
+        for (i, (original_index, card)) in active_cards.iter().enumerate() {
+            print!("{}. {}", original_index, card);
+            if i < active_cards.len() - 1 {
+                print!(" | ");
+            }
         }
-        println!("==================");
+        println!("\n==================");
     }
 
     pub fn select_card(&mut self, index: usize, player: &mut Player) -> bool {
@@ -51,10 +56,11 @@ impl Room {
             return false;
         }
 
+        self.cards[index].selected = true;
+
         match self.cards[index].card_type {
-            CardType::Monster => {
-                player.fight_monster(&self.cards[index]);
-                self.cards[index].selected = true;
+            CardType::Monster(_) => {
+                player.fight_monster(&mut self.cards[index]); // Note: now mutable
                 self.selected_count += 1;
                 true
             }
@@ -62,15 +68,15 @@ impl Room {
                 if let Some(_) = player.equipped_weapon.take() {
                     player.monsters_slain.clear();
                 }
+                self.cards[index].state = CardState::Used;
                 player.equipped_weapon = Some(self.cards[index].clone());
-                self.cards[index].selected = true;
                 self.selected_count += 1;
                 true
             }
             CardType::Potion => {
                 let heal_amount = self.cards[index].value;
                 player.health = (player.health + heal_amount).min(STARTING_HEALTH);
-                self.cards[index].selected = true;
+                self.cards[index].state = CardState::Used;
                 self.selected_count += 1;
                 true
             }
