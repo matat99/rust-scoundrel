@@ -72,7 +72,14 @@ impl Game {
 
                     match input.trim() {
                         "2" if self.can_skip => {
-                            self.deck.extend(room.cards);
+                            // Take ownership of the cards from the room
+                            let room_cards = std::mem::take(&mut room.cards);
+
+                            // Insert the cards at the beginning of the deck (the bottom)
+                            for card in room_cards {
+                                self.deck.insert(0, card);
+                            }
+
                             self.can_skip = false;
                             self.previous_card = None;
                             break 'room;
