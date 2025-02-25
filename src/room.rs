@@ -6,6 +6,7 @@ use crate::player::{Player, STARTING_HEALTH};
 pub struct Room {
     pub cards: Vec<Card>,
     pub selected_count: u8,
+    potion_used_this_turn: bool,
 }
 
 impl Room {
@@ -13,6 +14,7 @@ impl Room {
         Room {
             cards,
             selected_count: 0,
+            potion_used_this_turn: false,
         }
     }
 
@@ -74,8 +76,17 @@ impl Room {
                 true
             }
             CardType::Potion => {
-                let heal_amount = self.cards[index].value;
-                player.health = (player.health + heal_amount).min(STARTING_HEALTH);
+                if self.potion_used_this_turn {
+                    println!("You've already used a potion this turn. This potion is discarded.");
+                } else {
+                    let heal_amount = self.cards[index].value;
+                    player.health = (player.health + heal_amount).min(STARTING_HEALTH);
+                    self.potion_used_this_turn = true;
+                    println!(
+                        "Used potion. Healed for {}. Health now: {}",
+                        heal_amount, player.health
+                    );
+                }
                 self.cards[index].state = CardState::Used;
                 self.selected_count += 1;
                 true

@@ -98,7 +98,7 @@ impl Game {
                     if face_room {
                         // Logic for facing the room
                         while room.selected_count < 3 {
-                            println!("\nSelect a card (0-3) or 'q' to quit: ");
+                            println!("\nSelect a card or 'q' to quit: ");
                             let mut input = String::new();
                             io::stdin().read_line(&mut input).unwrap();
 

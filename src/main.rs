@@ -30,7 +30,7 @@ fn display_rules() {
     println!("\nCombat Rules:");
     println!("• Can fight monsters barehanded (take full damage)");
     println!("• Weapons reduce monster damage by weapon value");
-    println!("• Weapons can only fight monsters weaker than the last monster they killed");
+    println!("• Weapons can only fight monsters weaker or equal to the value of the last monster they killed");
 
     println!("\nPress Enter to return to menu...");
     get_user_input();
