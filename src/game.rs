@@ -1,5 +1,5 @@
 // src/game.rs
-use crate::cards::{create_deck, Card, Shuffleable};
+use crate::cards::{create_deck, Card, CardType, Shuffleable};
 use crate::player::Player;
 use crate::room::Room;
 use std::io::{self, Write};
@@ -59,68 +59,97 @@ impl Game {
                     println!("\nCards remaining in dungeon: {}", self.get_deck_count());
                     room.display();
                     self.player.display_status();
-                    println!("\nOptions:");
-                    println!("1. Face the room");
-                    if self.can_skip {
+
+                    let face_room = if !self.can_skip {
+                        true
+                    } else {
+                        println!("\nOptions:");
+                        println!("1. Face the room");
                         println!("2. Avoid the room (place all cards at bottom of dungeon)");
-                    }
-                    print!("Choose: ");
-                    io::stdout().flush().unwrap();
+                        print!("Choose: ");
+                        io::stdout().flush().unwrap();
 
-                    let mut input = String::new();
-                    io::stdin().read_line(&mut input).unwrap();
+                        let mut input = String::new();
+                        io::stdin().read_line(&mut input).unwrap();
 
-                    match input.trim() {
-                        "2" if self.can_skip => {
-                            // Take ownership of the cards from the room
-                            let room_cards = std::mem::take(&mut room.cards);
+                        match input.trim() {
+                            "2" => {
+                                // Take ownership of the cards from the room
+                                let room_cards = std::mem::take(&mut room.cards);
 
-                            // Insert the cards at the beginning of the deck (the bottom)
-                            for card in room_cards {
-                                self.deck.insert(0, card);
+                                // Insert the cards at the beginning of the deck (the bottom)
+                                for card in room_cards {
+                                    self.deck.insert(0, card);
+                                }
+                                println!("\n==Skipping encounter==");
+
+                                self.can_skip = false;
+                                self.previous_card = None;
+                                break 'room;
+                            }
+                            "1" => true,
+                            _ => {
+                                println!("Invalid choice!");
+                                continue;
+                            }
+                        }
+                    };
+
+                    if face_room {
+                        // Logic for facing the room
+                        while room.selected_count < 3 {
+                            println!("\nSelect a card (0-3) or 'q' to quit: ");
+                            let mut input = String::new();
+                            io::stdin().read_line(&mut input).unwrap();
+
+                            let input = input.trim();
+                            if input == "q" {
+                                break 'game;
                             }
 
-                            self.can_skip = false;
-                            self.previous_card = None;
-                            break 'room;
-                        }
-                        "1" => {
-                            while room.selected_count < 3 {
-                                println!("\nSelect a card (0-3) or 'q' to quit: ");
-                                let mut input = String::new();
-                                io::stdin().read_line(&mut input).unwrap();
+                            if let Ok(index) = input.parse::<usize>() {
+                                if room.select_card(index, &mut self.player) {
+                                    room.display();
+                                    self.player.display_status();
 
-                                let input = input.trim();
-                                if input == "q" {
-                                    break 'game;
-                                }
-
-                                if let Ok(index) = input.parse::<usize>() {
-                                    if room.select_card(index, &mut self.player) {
-                                        room.display();
-                                        self.player.display_status();
-
-                                        if self.player.health == 0 {
-                                            // Optional: Calculate final score according to rules
-                                            return; // Exit the run method entirely
-                                        }
+                                    if self.player.health == 0 {
+                                        return; // Exit if player dies
                                     }
-                                } else {
-                                    println!("Please enter a valid number!");
                                 }
+                            } else {
+                                println!("Please enter a valid number!");
                             }
-
-                            // Find the unselected card for the next room
-                            self.previous_card =
-                                room.cards.iter().find(|card| !card.selected).cloned();
-
-                            self.can_skip = true;
-                            break 'room;
                         }
-                        _ => println!("Invalid choice!"),
+
+                        // Prepare for next room
+                        self.previous_card = room.cards.iter().find(|card| !card.selected).cloned();
+                        self.can_skip = true;
+                        break 'room;
                     }
                 },
-                None => break 'game,
+                None => {
+                    // This is where the game ends because there are no more cards
+                    if self.player.health > 0 {
+                        println!("\nYou Win! Congratulations! Nerd!");
+                        println!("Final health: {}", self.player.health);
+
+                        // Calculate score according to rules
+                        let score = if self.player.health == 20
+                            && self
+                                .previous_card
+                                .as_ref()
+                                .map_or(false, |card| matches!(card.card_type, CardType::Potion))
+                        {
+                            // Special case: full health and last card was a potion
+                            self.player.health + self.previous_card.as_ref().unwrap().value
+                        } else {
+                            self.player.health
+                        };
+
+                        println!("Final score: {}", score);
+                    }
+                    break 'game;
+                }
             }
         }
     }
