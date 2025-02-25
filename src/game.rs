@@ -99,6 +99,11 @@ impl Game {
                                     if room.select_card(index, &mut self.player) {
                                         room.display();
                                         self.player.display_status();
+
+                                        if self.player.health == 0 {
+                                            // Optional: Calculate final score according to rules
+                                            return; // Exit the run method entirely
+                                        }
                                     }
                                 } else {
                                     println!("Please enter a valid number!");
