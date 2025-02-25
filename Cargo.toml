@@ -2,6 +2,13 @@
 name = "scoundrel"
 version = "0.1.0"
 edition = "2021"
+author = "matat99"
+description = "A Rust implementation of the single-player roguelike card game Scoundrel"
+readme = "README.md"
 
 [dependencies]
 rand = "0.8.5"
+
+[[bin]]
+name = "scoundrel"
+path = "src/main.rs"
